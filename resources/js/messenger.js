@@ -14,6 +14,77 @@ function imagePreview(input,selector){
         render.readAsDataURL(input.files[0]);
     }
 }
+let searchPage=1;
+let noMoreDataSearch=false;
+let searchTempVal="";
+let setSearchLoading=false;
+function searchUsers(query){
+    /**
+     * Issue was facing while searching whenever we searching anything it was working fine
+     * Second time we try to search it was facing issue while searching so it fixed by below code start
+     */
+    if(query != searchTempVal){
+        searchPage=1;
+        noMoreDataSearch=false;
+    }
+    /**
+     * Issue was facing while searching whenever we searching anything it was working fine
+     * Second time we try to search it was facing issue while searching so it fixed by below code end
+     */
+
+    searchTempVal=query;
+
+    if(!setSearchLoading && !noMoreDataSearch){
+        $.ajax({
+            method:'GET',
+            url:'/messenger/search',
+            data:{query:query,page:searchPage},
+            beforeSend:function(){
+                setSearchLoading=true;
+                let loader=`<div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+                </div>`;
+                $('.user_search_list_result').append(loader);
+            },
+            success:function(data){
+                setSearchLoading=false;
+                if(searchPage < 2){
+                    $('.user_search_list_result').html(data.records);
+                }
+                else{
+                    $('.user_search_list_result').append(data.records);
+                }
+           
+                noMoreDataSearch = searchPage >= data?.last_page
+                if(noMoreDataSearch) searchPage+=1;
+            },
+            error:function(xhr,status,error){
+                setSearchLoading=false;
+            }
+        });
+    }
+    
+}
+
+function actionOnScroll(selector,callback,topScroll=false){
+    $(selector).on('scroll',function(){
+        let element=$(this).get(0);
+        const condition=topScroll ? element.scrollTop==0 : element.scrollTop + element.clientHeight >= element.scrollHeight;
+
+        if(condition){
+            callback();
+        }
+    });
+}
+function debounce(callback,delay){
+    let timerId;
+    return function(...args){
+        clearTimeout(timerId);
+        timerId=setTimeout(()=>{
+            callback.apply(this,args);
+        },delay);
+    }
+}
 /**
  * -------------------------------------------
  * On DOM Load
@@ -22,5 +93,22 @@ function imagePreview(input,selector){
 $(document).ready(function(){
     $('#select_file').change(function(){
         imagePreview(this,'.profile-image-preview');
+    });
+     //Search action on keyup
+     const debounceSearch= debounce(function(){
+        const value=$('.user_search').val();
+        searchUsers(value);
+     },500);   
+    $('.user_search').on('keyup',function(){
+        let query=$(this).val();
+       if(query.length>0){
+            debounceSearch();
+       }
+    });
+
+    //search pagination
+    actionOnScroll(".user_search_list_result",function(){
+        let value=$('.user_search').val();
+         searchUsers(value);
     });
 });
