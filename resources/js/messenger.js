@@ -41,13 +41,12 @@ function searchUsers(query){
             data:{query:query,page:searchPage},
             beforeSend:function(){
                 setSearchLoading=true;
-                let loader=`<div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
-                </div>`;
+                let loader=`<div class="text-center search-loader"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>`;
                 $('.user_search_list_result').append(loader);
             },
             success:function(data){
                 setSearchLoading=false;
+                $('.user_search_list_result').find('.search-loader').remove();
                 if(searchPage < 2){
                     $('.user_search_list_result').html(data.records);
                 }
@@ -60,6 +59,7 @@ function searchUsers(query){
             },
             error:function(xhr,status,error){
                 setSearchLoading=false;
+                $('.user_search_list_result').find('.search-loader').remove();
             }
         });
     }
