@@ -800,7 +800,11 @@ button {
     left: auto;
     right: 0;
 }
-
+.wsus__single_chat.chat_right {
+    text-align: right;
+    left: auto;
+    right: 0;
+}
 .wsus__single_chat.chat_right .time::after {
     position: absolute;
     content: "\f00c";
@@ -1135,6 +1139,28 @@ button {
     --bs-spinner-border-width: 2px;
 }
 
+.wsus__single_chat .time,
+.wsus__single_chat .clock {
+    display: block;
+    font-size: 14px;
+    color: var(--paraColor);
+    font-weight: 400;
+    position: absolute;
+    bottom: -20px;
+    left: 0;
+    text-align: left;
+}
+
+.wsus__single_chat.chat_right .time,
+.wsus__single_chat.chat_right .clock {
+    text-align: right;
+    left: auto;
+    right: 0;
+}
+
+.wsus__single_chat.chat_right .clock i {
+    font-size: 11px;
+}
 /**Custom css**/
 .img-fluid.profile-image-preview{
     height: 135px !important;
@@ -1150,3 +1176,4 @@ button {
 ================================
     Chatting Application End
 ================================*/
+

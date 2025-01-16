@@ -1,3 +1,23 @@
+/***
+ *--------------------------------------
+ * Global variables
+ *--------------------------------------
+ */
+var temporaryMsgId=0;
+
+
+const messageForm= $(".message-form")
+,messageInput= $(".message-input"),
+messageBoxContainer=$(".wsus__chat_area_body"),
+csrf_token = $("meta[name=csrf_token]").attr("content");
+
+
+const getMessengerId=()=>$("meta[name=id]").attr("content");
+const setMessengerId=(id)=>$("meta[name=id]").attr("content",id);
+
+
+
+
 /**
  * -------------------------------------------
  * Resuable Functions
@@ -121,6 +141,60 @@ function IDinfo(id){
         }
     })
 }
+
+/**
+ * ------------------------------------------
+ * Send Message
+ * ------------------------------------------
+ */
+function sendMessage(){
+    temporaryMsgId+=1;
+    let tempID=`temp_${temporaryMsgId}`;//temp_1
+    const inputValue=messageInput.val();
+
+    //alert(inputValue);
+    if(inputValue.length>0){
+        const formData = new FormData($(".message-form")[0]);
+        formData.append('id',getMessengerId());
+        formData.append("temporaryMsgId",tempID);
+        formData.append("_token",csrf_token);
+        
+       
+        $.ajax({
+            method:"POST",
+            url:"/messenger/send-message",
+            data:formData,
+            dataType:"JSON",
+            processData:false,
+            contentType:false,
+            beforeSend:function(){
+                //add temp message on dom
+                messageBoxContainer.append(sendTempMessageCard(inputValue,tempID));
+                //messageForm.trigger("reset");
+                $(".emojionearea-editor").text("");
+            },
+            success:function(data){
+
+            },
+            error:function(xhr,status,error){
+
+            }
+        });
+    }
+}
+
+function sendTempMessageCard(message,tempId){
+    return `
+    <div class="wsus__single_chat_area" data-id="${tempId}">
+        <div class="wsus__single_chat chat_right">
+            <p class="messages">${message}</p>
+            <span class="clock"><i class="fas fa-clock"></i> 5h ago</span>
+          
+            <a class="action" href="#"><i class="fas fa-trash"></i></a>
+        </div>
+    </div>
+    `
+}
 /**
  * -------------------------------------------
  * On DOM Load
@@ -152,6 +226,14 @@ $(document).ready(function(){
     $("body").on("click",".messenger-list-item",function(){
         //alert('selected');
         const dataId=$(this).attr("data-id");
+        setMessengerId(dataId);
         IDinfo(dataId); 
+    });
+
+    //Send Message
+
+    $('.message-form').on("submit",function(e){
+        e.preventDefault();
+        sendMessage();
     });
 });
