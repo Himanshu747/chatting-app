@@ -19,7 +19,7 @@
         }else if($hours<=24){
             return $hours."h ago";
         }else{
-            return date('j M y',strtottime($timestamp));
+            return date('j M y',strtotime($timestamp));
         }
     }
  }

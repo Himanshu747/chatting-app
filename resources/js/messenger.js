@@ -22,7 +22,9 @@ function enableChatBoxLoader() {
     $(".wsus__message_paceholder").removeClass("d-none");
 }
 function disableChatBoxLoader() {
+    $(".wsus__chat_app").removeClass("show_info");
     $(".wsus__message_paceholder").addClass("d-none");
+    $(".wsus__message_paceholder_black").addClass("d-none");
 }
 
 function imagePreview(input, selector) {
@@ -121,7 +123,8 @@ function IDinfo(id) {
             enableChatBoxLoader();
         },
         success: function (data) {
-            console.log(data);
+           // console.log(data);
+         fetchMessages(data.getuserinfo.id);
             $(".messenger-header")
                 .find("img")
                 .attr("src", data.getuserinfo.avatar);
@@ -171,6 +174,7 @@ function sendMessage() {
             processData: false,
             contentType: false,
             beforeSend: function () {
+              
                 //console.log(hasAttachment);
                 if (hasAttachment) {
                     messageBoxContainer.append(
@@ -181,6 +185,7 @@ function sendMessage() {
                         sendTempMessageCard(inputValue, tempID)
                     );
                 }
+                scrollToBottom(messageBoxContainer);
                 //add temp message on dom
 
                 //messageForm.trigger("reset");
@@ -236,11 +241,47 @@ function messageFormReset() {
     messageForm.trigger("reset");
 }
 /**
- * Cancel selected attachment
+ * -------------------------------------------------
+ * Fetch messages from database
+ * ------------------------------------------------
  */
-// function cancelAttachment(){
 
-// }
+let messagesPage = 1;
+let noMoreMessages = false;
+let messagesLoading = false;
+function fetchMessages(id) {
+    $.ajax({
+        method: "GET",
+        url: "/messenger/fetch-messages",
+        data: {
+            _token: csrf_token,
+            id: id,
+            page: messagesPage,
+        },
+        success: function (data) {
+            if(messagesPage==1){
+                messageBoxContainer.html(data.messages);
+                scrollToBottom(messageBoxContainer);
+            } else{
+                messageBoxContainer.prepend(data.messages);
+            }
+           
+        },
+        error: function (xhr, status, error) {
+
+        },
+    });
+}
+/**
+ * -------------------------------------------------
+ * Slide to bottom on action
+ * ------------------------------------------------
+ */
+function scrollToBottom(container){
+    $(container).stop().animate({
+        scrollTop: $(container)[0].scrollHeight
+    });
+}
 /**
  * -------------------------------------------
  * On DOM Load

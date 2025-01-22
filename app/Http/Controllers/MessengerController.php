@@ -79,4 +79,27 @@ class MessengerController extends Controller
     {
         return view('messenger.components.message-card', compact('message', 'attachment'))->render();
     }
+    //fetch messages from database
+
+    function fetchMessages(Request $request){
+        //dd($request->all());
+        $messages=Message::where('from_id',Auth::user()->id)->where('to_id',$request->id)
+        ->orWhere('from_id',$request->id)->where('to_id',Auth::user()->id)
+        ->latest()->paginate(20);
+        $response=[
+             'last_page'=>$messages->lastPage(),
+             'messages'=>''   
+        ];
+    
+        //here we have to do little validation
+
+        $allMessages="";
+        foreach($messages->reverse() as $message){
+            $allMessages.=$this->messageCard($message,$message->attachment ? true:false);
+        }
+
+       $response['messages']=$allMessages;
+
+       return response()->json($response);
+    }
 }
