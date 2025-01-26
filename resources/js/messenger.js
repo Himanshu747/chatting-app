@@ -123,8 +123,8 @@ function IDinfo(id) {
             enableChatBoxLoader();
         },
         success: function (data) {
-           // console.log(data);
-         fetchMessages(data.getuserinfo.id);
+            // console.log(data);
+            fetchMessages(data.getuserinfo.id, true);
             $(".messenger-header")
                 .find("img")
                 .attr("src", data.getuserinfo.avatar);
@@ -140,7 +140,7 @@ function IDinfo(id) {
                 .find(".user_unique_name")
                 .text(data.getuserinfo.user_name);
             NProgress.done();
-            disableChatBoxLoader();
+            // disableChatBoxLoader();
         },
         error: function (xhr, status, error) {
             disableChatBoxLoader();
@@ -174,7 +174,6 @@ function sendMessage() {
             processData: false,
             contentType: false,
             beforeSend: function () {
-              
                 //console.log(hasAttachment);
                 if (hasAttachment) {
                     messageBoxContainer.append(
@@ -249,38 +248,66 @@ function messageFormReset() {
 let messagesPage = 1;
 let noMoreMessages = false;
 let messagesLoading = false;
-function fetchMessages(id) {
-    $.ajax({
-        method: "GET",
-        url: "/messenger/fetch-messages",
-        data: {
-            _token: csrf_token,
-            id: id,
-            page: messagesPage,
-        },
-        success: function (data) {
-            if(messagesPage==1){
-                messageBoxContainer.html(data.messages);
-                scrollToBottom(messageBoxContainer);
-            } else{
-                messageBoxContainer.prepend(data.messages);
-            }
-           
-        },
-        error: function (xhr, status, error) {
+function fetchMessages(id, newFetch = false) {
+    if (newFetch) {
+        messagesPage = 1;
+        noMoreMessages = false;
+    }
+    if (!noMoreMessages) {
+        $.ajax({
+            method: "GET",
+            url: "/messenger/fetch-messages",
+            data: {
+                _token: csrf_token,
+                id: id,
+                page: messagesPage,
+            },
+            beforeSend:function(){
+                messagesLoading=false;
+                let loader = `<div class="text-center messages-loader"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>`;
+                messageBoxContainer.prepend(loader);
+            },
+            success: function (data) {
+                //Remove loader
+                messageBoxContainer.find("messages-loader").remove();
 
-        },
-    });
+                if (messagesPage == 1) {
+                    messageBoxContainer.html(data.messages);
+                    scrollToBottom(messageBoxContainer);
+                } else {
+                    const lastMsg = $(messageBoxContainer)
+                        .find(".message-card")
+                        .first();
+                    const curOffset =
+                        lastMsg.offset().top - messageBoxContainer.scrollTop();
+                    messageBoxContainer.prepend(data.messages);
+
+                    messageBoxContainer.scrollTop(
+                        lastMsg.offset().top - curOffset
+                    );
+                }
+
+                //pagination lock and page increment
+                noMoreMessages = messagesPage >= data?.last_page;
+                if (!noMoreMessages) messagesPage += 1;
+
+                disableChatBoxLoader();
+            },
+            error: function (xhr, status, error) {},
+        });
+    }
 }
 /**
  * -------------------------------------------------
  * Slide to bottom on action
  * ------------------------------------------------
  */
-function scrollToBottom(container){
-    $(container).stop().animate({
-        scrollTop: $(container)[0].scrollHeight
-    });
+function scrollToBottom(container) {
+    $(container)
+        .stop()
+        .animate({
+            scrollTop: $(container)[0].scrollHeight,
+        });
 }
 /**
  * -------------------------------------------
@@ -333,4 +360,14 @@ $(document).ready(function () {
     $(".cancel-attachment").on("click", function () {
         messageFormReset();
     });
+
+    //message pagination
+
+    actionOnScroll(
+        ".wsus__chat_area_body",
+        function () {
+            fetchMessages(getMessengerId());
+        },
+        true
+    );
 });

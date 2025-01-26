@@ -88,9 +88,13 @@ class MessengerController extends Controller
         ->latest()->paginate(20);
         $response=[
              'last_page'=>$messages->lastPage(),
+             'last_message'=>$messages->last(),
              'messages'=>''   
         ];
-    
+        if(count($messages)<1){
+            $response['messages']="<div class='d-flex justify-content-center align-items-center h-100'><p>Say hi and start messaging.</p></div>";
+            return response()->json($response);
+        }
         //here we have to do little validation
 
         $allMessages="";
