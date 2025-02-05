@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Traits\FileUploadTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class MessengerController extends Controller
 {
@@ -81,29 +82,76 @@ class MessengerController extends Controller
     }
     //fetch messages from database
 
-    function fetchMessages(Request $request){
+    function fetchMessages(Request $request)
+    {
         //dd($request->all());
-        $messages=Message::where('from_id',Auth::user()->id)->where('to_id',$request->id)
-        ->orWhere('from_id',$request->id)->where('to_id',Auth::user()->id)
-        ->latest()->paginate(20);
-        $response=[
-             'last_page'=>$messages->lastPage(),
-             'last_message'=>$messages->last(),
-             'messages'=>''   
+        $messages = Message::where('from_id', Auth::user()->id)->where('to_id', $request->id)
+            ->orWhere('from_id', $request->id)->where('to_id', Auth::user()->id)
+            ->latest()->paginate(20);
+        $response = [
+            'last_page' => $messages->lastPage(),
+            'last_message' => $messages->last(),
+            'messages' => ''
         ];
-        if(count($messages)<1){
-            $response['messages']="<div class='d-flex justify-content-center align-items-center h-100'><p>Say hi and start messaging.</p></div>";
+        if (count($messages) < 1) {
+            $response['messages'] = "<div class='d-flex justify-content-center align-items-center h-100'><p>Say hi and start messaging.</p></div>";
             return response()->json($response);
         }
         //here we have to do little validation
 
-        $allMessages="";
-        foreach($messages->reverse() as $message){
-            $allMessages.=$this->messageCard($message,$message->attachment ? true:false);
+        $allMessages = "";
+        foreach ($messages->reverse() as $message) {
+            $allMessages .= $this->messageCard($message, $message->attachment ? true : false);
         }
 
-       $response['messages']=$allMessages;
+        $response['messages'] = $allMessages;
 
-       return response()->json($response);
+        return response()->json($response);
+    }
+
+    //fetch contact from database
+    function fetchContacts(Request $request) {
+        $users=Message::join('users',function($join){
+            $join->on('messages.from_id','=','users.id')
+            ->orOn('messages.to_id','=','users.id');
+        })
+        ->where(function($q){
+            $q->where('messages.from_id',Auth::user()->id)
+            ->orWhere('messages.to_id',Auth::user()->id);
+        })
+        ->where('users.id','!=',Auth::user()->id)
+        ->select(
+            'users.id', 
+            'users.name', 
+            'users.email', 
+            'users.avatar',
+            DB::raw('MAX(messages.created_at) as max_created_at')
+        )
+        ->orderBy('max_created_at','desc')
+        ->groupBy('users.id', 'users.name', 'users.email', 'users.avatar')
+        ->paginate(5);
+
+        if(count($users)>0){
+            $contacts="";
+            foreach($users as $user){
+                $contacts .= $this->getContactItem($user);
+            }
+        }
+        else{
+            $contacts="<p>Your contact list is empty</p>";
+        }
+        return response()->json([
+            'contacts'=>$contacts,
+            'last_page'=>$users->lastPage()
+        ]);
+    }
+    function getContactItem($user){
+        $lastMessage=Message::where('from_id', Auth::user()->id)->where('to_id', $user->id)
+        ->orWhere('from_id', $user->id)->where('to_id', Auth::user()->id)
+        ->latest()->first();
+        $unseenCounter=Message::where('from_id',$user->id)->where('to_id',Auth::user()->id)->where('seen',0)->count();
+        
+
+        return view('messenger.components.contact-list-item',compact('lastMessage','unseenCounter','user'))->render();
     }
 }

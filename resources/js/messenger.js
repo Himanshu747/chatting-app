@@ -9,7 +9,8 @@ const messageForm = $(".message-form"),
     messageInput = $(".message-input"),
     messageBoxContainer = $(".wsus__chat_area_body"),
     csrf_token = $("meta[name=csrf_token]").attr("content");
-
+   
+    const messengerContactBox=$(".messenger-contacts");
 const getMessengerId = () => $("meta[name=id]").attr("content");
 const setMessengerId = (id) => $("meta[name=id]").attr("content", id);
 
@@ -253,7 +254,7 @@ function fetchMessages(id, newFetch = false) {
         messagesPage = 1;
         noMoreMessages = false;
     }
-    if (!noMoreMessages) {
+    if (!noMoreMessages && !messagesLoading) {
         $.ajax({
             method: "GET",
             url: "/messenger/fetch-messages",
@@ -298,6 +299,47 @@ function fetchMessages(id, newFetch = false) {
     }
 }
 /**
+ * ----------------------------------------------- 
+ *  Fetch Contact List from database
+ * -----------------------------------------------
+ */
+let contactPage=1;
+let noMoreContacts=false;
+let contactLoading=false;
+
+function getContacts(){
+    
+    if(!contactLoading && !noMoreContacts){
+        $.ajax({
+            method:'GET',
+            url:"messenger/fetch-contacts",
+            data:{page:contactPage},
+            beforeSend:function(){
+                contactLoading=true;
+                let loader = `<div class="text-center contact-loader"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>`;
+                messengerContactBox.append(loader);
+            },
+            success:function(data){
+                contactLoading=false;
+                messengerContactBox.find(".contact-loader").remove();
+                if(contactPage<2){
+                    messengerContactBox.html(data.contacts);
+                } else {
+                    messengerContactBox.append(data.contacts);
+                }
+                noMoreContacts=contactPage>=data?.last_page;
+                if(!noMoreContacts) contactPage+=1;
+            },
+            error:function(xhr,status,error){
+                contactLoading=false;
+                messengerContactBox.find(".contact-loader").remove();
+            }
+        });
+    }
+    
+}
+
+/**
  * -------------------------------------------------
  * Slide to bottom on action
  * ------------------------------------------------
@@ -314,7 +356,9 @@ function scrollToBottom(container) {
  * On DOM Load
  * ------------------------------------------
  */
+getContacts();
 $(document).ready(function () {
+   
     $("#select_file").change(function () {
         imagePreview(this, ".profile-image-preview");
     });
@@ -369,5 +413,13 @@ $(document).ready(function () {
             fetchMessages(getMessengerId());
         },
         true
+    );
+
+    actionOnScroll(
+        ".messenger-contacts",
+        function () {
+            getContacts();
+        }
+      
     );
 });

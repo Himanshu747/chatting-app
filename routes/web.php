@@ -52,4 +52,9 @@ Route::group(['middleware'=>'auth'],function(){
     //Fetch message
 
     Route::get('messenger/fetch-messages',[MessengerController::class,'fetchMessages'])->name('messenger.fetch-messages');
+    
+
+    //Fetch contact
+
+    Route::get('messenger/fetch-contacts',[MessengerController::class,'fetchContacts'])->name('messenger.fetch-contacts');
 });
