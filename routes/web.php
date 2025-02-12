@@ -57,4 +57,10 @@ Route::group(['middleware'=>'auth'],function(){
     //Fetch contact
 
     Route::get('messenger/fetch-contacts',[MessengerController::class,'fetchContacts'])->name('messenger.fetch-contacts');
+
+    Route::get('messenger/update-contact-item',[MessengerController::class,'updateContactItem'])->name('messenger.update-contact-item');
+
+    Route::post('messenger/make-seen',[MessengerController::class,'makeSeen'])->name('messenger.make-seen');
+    //Update Contact
+
 });

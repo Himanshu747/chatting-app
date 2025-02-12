@@ -8,8 +8,8 @@ var temporaryMsgId = 0;
 const messageForm = $(".message-form"),
     messageInput = $(".message-input"),
     messageBoxContainer = $(".wsus__chat_area_body"),
-    csrf_token = $("meta[name=csrf_token]").attr("content");
-   
+    csrf_token = $("meta[name=csrf_token]").attr("content"),
+    auth_id = $("meta[name=auth_id]").attr("content");
     const messengerContactBox=$(".messenger-contacts");
 const getMessengerId = () => $("meta[name=id]").attr("content");
 const setMessengerId = (id) => $("meta[name=id]").attr("content", id);
@@ -193,6 +193,8 @@ function sendMessage() {
                 //$(".emojionearea-editor").text("");
             },
             success: function (data) {
+                //update contact item
+                updateContactItem(getMessengerId());
                 const tempMsgCardElement = messageBoxContainer.find(
                     `.message-card[data-id=${data.tempID}]`
                 );
@@ -272,6 +274,9 @@ function fetchMessages(id, newFetch = false) {
                 //Remove loader
                 messageBoxContainer.find("messages-loader").remove();
 
+                //make messages seen
+
+                makeSeen(true);
                 if (messagesPage == 1) {
                     messageBoxContainer.html(data.messages);
                     scrollToBottom(messageBoxContainer);
@@ -338,7 +343,57 @@ function getContacts(){
     }
     
 }
+/**
+ * -------------------------------------------------
+ * Update contact Item
+ * ------------------------------------------------
+ */
 
+function updateContactItem(user_id){
+    if(user_id!=auth_id){
+        $.ajax({
+            method:"GET",
+            url:"/messenger/update-contact-item",
+            data:{user_id:user_id},
+            success:function(data){
+                messengerContactBox.find(`.messenger-list-item[data-id="${user_id}"]`).remove();
+                messengerContactBox.prepend(data.contact_item);
+    
+                if(user_id == getMessengerId()) updateSelectedContent(user_id);
+            },
+            error:function(xhr,status,error){
+    
+            }
+        });
+    }
+    
+}
+/**
+ * -------------------------------------------------
+ * Make  messages seen
+ * ------------------------------------------------
+ */
+function makeSeen(status){
+    $(`.messenger-list-item[data-id="${getMessengerId()}"]`).find(`.unseen_count`).remove();
+    $.ajax({
+        method:"POST",
+        url:"/messenger/make-seen",
+        data:{
+            _token:csrf_token,
+            id:getMessengerId()
+        },
+        success:function(){
+
+        },
+        error:function(){
+
+        }
+    })
+}
+function updateSelectedContent(user_id){
+    $('.messenger-list-item').removeClass('active');
+    $(`.messenger-list-item[data-id="${user_id}"]`).addClass('active');
+}
 /**
  * -------------------------------------------------
  * Slide to bottom on action
@@ -358,7 +413,19 @@ function scrollToBottom(container) {
  */
 getContacts();
 $(document).ready(function () {
-   
+    //Mobile view chat window opening
+  
+    if(window.innerWidth < 768) {
+       //Mobile view Click on Contact list and it open chat window
+        $('body').on('click','.messenger-list-item',function(){
+            $(".wsus__user_list").addClass('d-none');
+        });
+
+        //Mobile view Click on back button and it back to the contact list
+        $('body').on('click','.back_to_list',function(){
+            $(".wsus__user_list").removeClass('d-none');
+        });
+    }
     $("#select_file").change(function () {
         imagePreview(this, ".profile-image-preview");
     });
@@ -384,6 +451,7 @@ $(document).ready(function () {
     $("body").on("click", ".messenger-list-item", function () {
         //alert('selected');
         const dataId = $(this).attr("data-id");
+        updateSelectedContent(dataId);
         setMessengerId(dataId);
         IDinfo(dataId);
     });

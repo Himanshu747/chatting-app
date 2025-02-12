@@ -129,7 +129,7 @@ class MessengerController extends Controller
         )
         ->orderBy('max_created_at','desc')
         ->groupBy('users.id', 'users.name', 'users.email', 'users.avatar')
-        ->paginate(5);
+        ->paginate(10);
 
         if(count($users)>0){
             $contacts="";
@@ -153,5 +153,30 @@ class MessengerController extends Controller
         
 
         return view('messenger.components.contact-list-item',compact('lastMessage','unseenCounter','user'))->render();
+    }
+
+    //update contact item
+
+    function updateContactItem(Request $request){
+        
+        //get user data
+        $user=User::where('id',$request->user_id)->first();
+
+        if(!$user){
+            return response()->json([
+                'message'=>'user not found'
+            ],401);
+        }
+
+        $contactItem=$this->getContactItem($user);
+        return response()->json([
+            'contact_item'=>$contactItem
+        ],200);
+
+    }
+
+    function makeSeen(Request $request){
+        Message::where('from_id',$request->id)->where('to_id',Auth::user()->id)->where('seen',0)->update(['seen'=>1]);
+        return true;
     }
 }
