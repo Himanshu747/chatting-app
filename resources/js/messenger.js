@@ -126,6 +126,7 @@ function IDinfo(id) {
         success: function (data) {
             // console.log(data);
             fetchMessages(data.getuserinfo.id, true);
+            data.favorite > 0 ? $('.favourite').addClass('active') : $('.favourite').removeClass('active') ;
             $(".messenger-header")
                 .find("img")
                 .attr("src", data.getuserinfo.avatar);
@@ -390,6 +391,34 @@ function makeSeen(status){
         }
     })
 }
+/**
+ * -------------------------------------------------
+ * Favorite
+ * ------------------------------------------------
+ */
+function star(user_id){
+    $(".favourite").toggleClass('active');
+    $.ajax({
+        method:"POST",
+        url:"/messenger/favorite",
+        data:{
+            _token:csrf_token,
+            id:user_id
+        },
+        success:function(data){
+            if(data.status=='added'){
+                notyf.success('Added to favorite list');
+            }
+            else{
+                notyf.success("Removed from favorite list");
+            }
+        },
+        error:function(xhr,staus,error){
+
+        }
+    })
+}
+
 function updateSelectedContent(user_id){
     $('.messenger-list-item').removeClass('active');
     $(`.messenger-list-item[data-id="${user_id}"]`).addClass('active');
@@ -411,10 +440,11 @@ function scrollToBottom(container) {
  * On DOM Load
  * ------------------------------------------
  */
-getContacts();
+
 $(document).ready(function () {
     //Mobile view chat window opening
-  
+    getContacts();
+   
     if(window.innerWidth < 768) {
        //Mobile view Click on Contact list and it open chat window
         $('body').on('click','.messenger-list-item',function(){
@@ -483,6 +513,7 @@ $(document).ready(function () {
         true
     );
 
+    //Contacts pagination
     actionOnScroll(
         ".messenger-contacts",
         function () {
@@ -490,4 +521,11 @@ $(document).ready(function () {
         }
       
     );
+
+    //add-remove to favorite
+
+    $(".favourite").on("click",function(e){
+        e.preventDefault();
+        star(getMessengerId());
+    });
 });
