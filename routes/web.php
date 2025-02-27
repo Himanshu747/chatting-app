@@ -65,6 +65,6 @@ Route::group(['middleware'=>'auth'],function(){
     //Favorite route
     Route::post('messenger/favorite',[MessengerController::class,'favorite'])->name('messenger.favorite');
     
-
+    Route::delete('messenger/delete-message',[MessengerController::class,'deleteMessage'])->name('messenger.delete-message');
 
 });
