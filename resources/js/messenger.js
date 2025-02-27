@@ -126,6 +126,16 @@ function IDinfo(id) {
         success: function (data) {
             // console.log(data);
             fetchMessages(data.getuserinfo.id, true);
+            //load gallery
+            $('.wsus__chat_info_gallery').html("");
+            if(data?.shared_photos){
+                $('.nothing_share').addClass('d-none');
+               
+                $('.wsus__chat_info_gallery').html(data.shared_photos);
+            }
+            else{
+                $('.nothing_share').removeClass('d-none');
+            }
             data.favorite > 0 ? $('.favourite').addClass('active') : $('.favourite').removeClass('active') ;
             $(".messenger-header")
                 .find("img")
