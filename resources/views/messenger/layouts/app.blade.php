@@ -8,6 +8,8 @@
     <meta name="id" content="">
     <meta name="csrf_token" content="{{ csrf_token() }}">
     <meta name="auth_id" content="{{ auth()->user()->id }}">
+    <meta name="url" content="{{ public_path() }}">
+
     <title>Chatting Application</title>
     <link rel="icon" type="image/png" href="images/favicon.png">
     <link rel="stylesheet" href="{{asset('assets/css/all.min.css')}}">

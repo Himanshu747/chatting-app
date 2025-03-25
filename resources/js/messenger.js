@@ -9,7 +9,8 @@ const messageForm = $(".message-form"),
     messageInput = $(".message-input"),
     messageBoxContainer = $(".wsus__chat_area_body"),
     csrf_token = $("meta[name=csrf_token]").attr("content"),
-    auth_id = $("meta[name=auth_id]").attr("content");
+    auth_id = $("meta[name=auth_id]").attr("content"),
+    url = $("meta[name=url]").attr("content");
     const messengerContactBox=$(".messenger-contacts");
 const getMessengerId = () => $("meta[name=id]").attr("content");
 const setMessengerId = (id) => $("meta[name=id]").attr("content", id);
@@ -244,7 +245,24 @@ function sendTempMessageCard(message, tempId, attachment = false) {
     </div>
     `;
 }
-
+function receiveMessageCard(e){
+    if (e.attachment) {
+        return `<div class="wsus__single_chat_area message-card" data-id="${e.id}">
+                <div class="wsus__single_chat">
+                    <a class="venobox" data-gall="gallery${e.id}" href="${url + e.attachment}">
+                        <img src="${url + e.attachment}" alt="gallery1" class="img-fluid w-100">
+                    </a>
+                    ${e.body.length > 0 ? `<p class="messages">${e.body}</p>`: ""}  
+                </div>
+         </div>`;
+    }
+    return `<div class="wsus__single_chat_area message-card" data-id="${e.id}">
+        <div class="wsus__single_chat">
+            <p class="messages">${e.body}</p>
+        </div>
+    </div>
+    `;
+}
 function messageFormReset() {
     $(".attachment-block").addClass("d-none");
     $(".emojionearea-editor").text("");
@@ -483,6 +501,19 @@ function scrollToBottom(container) {
             scrollTop: $(container)[0].scrollHeight,
         });
 }
+
+
+window.Echo.private('message.'+auth_id)
+  .listen("Message",
+    (e)=>{
+        console.log(e);
+        let message=receiveMessageCard(e);
+        if(getMessengerId()==e.from_id){
+            messageBoxContainer.append(message);
+        }
+      
+    }
+)
 /**
  * -------------------------------------------
  * On DOM Load
@@ -584,4 +615,11 @@ $(document).ready(function () {
         let id=$(this).data("id");
         deleteMessage(id);
     });
+
+    
+
+
+
+
+
 });
