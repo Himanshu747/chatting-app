@@ -503,13 +503,27 @@ function scrollToBottom(container) {
 }
 
 
+/**
+ * ------------------------------------------------
+ * Play message sound
+ * ----------------------------------------------
+ */
+function playNotificationSound(){
+    const sound= new Audio(`/default/message-sound.mp3`);
+    sound.play();
+}
+
 window.Echo.private('message.'+auth_id)
   .listen("Message",
     (e)=>{
-        console.log(e);
+        if(getMessengerId()!=e.from_id){
+            updateContactItem(e.from_id);
+            playNotificationSound();
+        }
         let message=receiveMessageCard(e);
         if(getMessengerId()==e.from_id){
             messageBoxContainer.append(message);
+            scrollToBottom(messageBoxContainer);
         }
       
     }
